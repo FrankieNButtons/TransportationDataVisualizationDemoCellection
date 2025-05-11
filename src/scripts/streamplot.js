@@ -328,5 +328,5 @@ legendRow.append("text")
   })();
 
   // 每 5 秒刷新
-  setInterval(draw, 10);
+  setInterval(draw, 5000);
 });

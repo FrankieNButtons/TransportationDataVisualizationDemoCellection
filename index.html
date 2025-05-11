@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>万方可视化作业2</title>
+  <!-- <link rel="stylesheet" href="./src/css/style.css" /> -->
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #faf5fa;
+      display: flex;
+      /* 恢复原 flex 布局，主体仍为 sidebar + main */
+      height: 100vh;
+    }
+
+    /* 侧边栏样式 */
+    .sidebar {
+      width: 220px;
+      background-color: #b443b0;
+      color: #fff;
+      padding: 20px 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar h2 {
+      text-align: center;
+      font-size: 22px;
+      margin-bottom: 30px;
+    }
+
+    .nav-item {
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      color: #eefeff;
+      text-decoration: none;
+      transition: background 0.3s;
+    }
+
+    .nav-item:hover {
+      background-color: #2d2d45;
+      color: #fff;
+    }
+
+    .nav-item i {
+      margin-right: 10px;
+    }
+
+    /* 主体内容区域 */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      height: 60px;
+      background-color: #fceffb;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .content {
+      flex: 1;
+      padding: 20px;
+    }
+
+    /* 仪表盘网格（放在 .content 内） */
+    .dashboard {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      /* 左列 : 右列  = 3 : 2  (竖向 3/5 分割) */
+      grid-template-columns: 3fr 2fr;
+      /* 左侧上下分区：3 : 2 */
+      grid-template-rows: 3fr 2fr;
+      grid-template-areas:
+        "chord right"
+        "line  right";
+      gap: 4px;
+      /* 可按需调 */
+    }
+
+    /* .dashboard > div{
+      background:#ffffff;
+      border:1px solid #e0e0e0;
+  } */
+    #chord-container {
+      grid-area: chord;
+      position: relative;
+    }
+
+    /* 左侧区域统一白底与灰色边框 */
+    #chord-container {
+      background: #ffffff;
+      border: 1px solid #e0e0e0;
+      /* 垂直+水平居中 */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 20px 10px;
+      overflow: visible;
+    }
+
+    #line-container {
+      background: #ffffff;
+      border: 1px solid #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 6px;
+      overflow: visible;
+    }
+    
+    #right-column {
+      grid-area: right;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #right-column>div {
+      flex: 1;
+      border: 1px solid #e0e0e0;
+      background: #ffffff;
+      padding: 20px;
+      overflow: visible;
+    }
+
+    /* tooltip for chord hover */
+    #tooltip {
+      position: absolute;
+      visibility: hidden;
+      pointer-events: none;
+      background: #ffffff;
+      border: 1px solid #ccc;
+      padding: 4px;
+      border-radius: 3px;
+      font-size: 12px;
+      z-index: 1000;
+      white-space: pre-line;
+    }
+
+    /* 缩小右上柱状图 */
+    #bar-chart {
+      width: 80% !important;
+      height: 80% !important;
+      margin: auto;
+      display: block;
+    }
+
+    /* 柱状图文字显示不被容器裁剪 */
+    #bar-container,
+    #bar-chart {
+      overflow: visible !important;
+    }
+
+    /* Chord 图标题与居中 */
+    #chord-container .chart-title {
+      text-align: center;
+      font-size: 20px;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    #bar-container .chart-title {
+      font-size: 20px;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    #chord-container svg {
+      width: 80% !important;
+      height: 95% !important;
+      margin: auto;
+      display: block;
+    }
+
+    #bar-chart {
+      width: 80% !important;
+      height: 90% !important;
+      margin: auto;
+      display: block;
+    }
+
+    #line-container svg {
+      width: 95% !important;
+      height: 88% !important;
+      margin: auto;
+      display: block;
+    }
+
+    #sundial-container {
+      padding: 20px 20px 2px;
+    }
+
+    /* ---------- 杂项展示 scroll page ---------- */
+    .misc-container {
+      width: 100%;
+      height: calc(100vh - 60px); /* 顶栏高度为60px，内容正好贴顶 */
+      overflow-y: auto;
+      scroll-behavior: smooth;
+    }
+    .viz-section{
+      /* min-height: 100vh; */            /* 每个可视化占满一屏高度 */
+      display: flex;
+      flex-direction: column;       /* 标题在上，图在下 */
+      align-items: center;
+      /* justify-content: center; */    /* Remove vertical centering */
+      row-gap: 12px;                /* 标题与图形间距 */
+      /* position: relative; */      /* Remove if not needed for layout */
+    }
+
+    .viz-title{
+      font-size: 22px;
+      font-weight: 600;
+      color: #333;
+    }
+    /* 可视化容器：占位 + 自适应居中 */
+    .viz-holder {
+      min-width: 300px;
+      min-height: 300px;
+      width: 600px;
+      height: 400px;
+      margin: 0 auto;
+      display: flex;
+      /* align-items: center; */  /* Remove vertical centering */
+      justify-content: center;
+      padding: 8px 0;
+    }
+
+    /* --- 固定侧边栏 & 顶栏覆盖 --- */
+    .sidebar{
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      overflow-y: auto;   /* 菜单多时可独立滚动 */
+      z-index: 2;
+    }
+    .topbar{
+      position: fixed;
+      left: 220px;        /* 与侧边栏宽度保持一致 */
+      right: 0;
+      top: 0;
+      z-index: 1;
+    }
+    .main{
+      margin-left: 220px; /* 主内容整体右移 */
+    }
+    .content{
+      padding-top: 60px;  /* 下推以避开固定顶栏 */
+    }
+  </style>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+
+<body>
+
+  <div id="tooltip"></div>
+
+  <div class="sidebar">
+    <h2>Agon 管理台</h2>
+    <a href="#" class="nav-item" data-view="dashboard"><i>📊</i> 仪表盘</a>
+    <a href="#" class="nav-item" data-view="product"><i>📦</i> 杂项展示</a>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div>这是一个交通数据可视化Demo，欢迎您</div>
+      <div>【这些都是假的】🔔 通知 | ⚙️ 设置 | 退出</div>
+    </div>
+
+    <div class="content">
+      <div class="dashboard">
+        <div id="chord-container">
+        </div>
+        <div id="line-container"></div>
+        <div id="right-column">
+          <div id="bar-container">
+            <svg id="bar-chart" width="100%" height="100%"></svg>
+          </div>
+          <div id="sundial-container"></div>
+        </div>
+      </div>
+      <div id="product-view" class="view" style="display:none;">
+        <div id="misc-container" class="misc-container">
+          <section id="bubble-section" class="viz-section">
+            <h2 class="viz-title">区域间流量力导泡泡图</h2>
+            <div id="bubble-viz"  class="viz-holder"></div>
+          </section>
+          
+          <section id="bar-race-section" class="viz-section">
+            <h2 class="viz-title">交通流量竞速条形图</h2>
+            <div id="bar-race-viz" class="viz-holder"></div>
+          </section>
+          
+          <section id="spiral-section" class="viz-section">
+            <h2 class="viz-title">区域流量螺旋时间线</h2>
+            <div id="spiral-viz" class="viz-holder"></div>
+          </section>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <script src="./src/scripts/transchord.js"></script>
+  <script src="./src/scripts/streamplot.js"></script>
+  <script src="./src/scripts/sunburst.js"></script>
+  <script src="./src/scripts/bubbleForce.js"></script>
+  <script src="./src/scripts/barRace.js"></script>
+  <script src="./src/scripts/spiralTimeline.js"></script>
+  <script>
+    /* ---------- 视图切换 ---------- */
+    const navItems     = document.querySelectorAll('.nav-item');
+    const dashboardView = document.querySelector('.dashboard');
+    const productView   = document.getElementById('product-view');
+  
+    /** 根据 data-view 显示对应区域 */
+    function show(view) {
+      dashboardView.style.display = 'none';
+      productView.style.display   = 'none';
+  
+      if (view === 'dashboard') {
+        dashboardView.style.display = 'grid';
+      }
+      if (view === 'product') {
+        productView.style.display = 'block';
+      }
+    }
+  
+    // 默认展示仪表盘
+    show('dashboard');
+  
+    // 侧边栏点击切换
+    navItems.forEach(item => {
+      item.addEventListener('click', e => {
+        e.preventDefault();
+        show(item.dataset.view);
+      });
+    });
+  </script>
+</body>
+
+</html>
